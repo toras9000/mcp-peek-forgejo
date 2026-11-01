@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net11.0</TargetFramework>
+    <RollForward>Major</RollForward>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>aa289b98-86e9-44ff-9f4f-a2668e206874</UserSecretsId>
+
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ModelContextProtocol.AspNetCore" Version="2.3.0" />
+  </ItemGroup>
+
+</Project>
