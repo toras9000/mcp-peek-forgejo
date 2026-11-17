@@ -1,0 +1,117 @@
+#!/usr/bin/env -S dotnet run --file
+#:package ForgejoApiClient@17.0.0-rev.2
+#:package Lestaly.General@0.148.0
+#:package Kokuban@0.2.0
+#:property PublishAot=false
+#:include .env-helper.cs
+using ForgejoApiClient;
+using Lestaly;
+using Lestaly.Cx;
+
+return await Paved.ProceedAsync(async () =>
+{
+    var target = new
+    {
+        Owner = "test-user",
+        Repo = "Lestaly",
+    };
+
+    using var signal = new SignalCancellationPeriod();
+    var config = new ServiceConfig(ThisSource.Directory());
+
+    Console.WriteLine("テスタのAPIトークンを読み込み ...");
+    var forgejoToken = await config.ApiKeys.TesterTokenFile.LoadTokenAsync(signal.Token) ?? throw new Exception("トークン情報を読み取れない");
+    if (forgejoToken.Service.AbsoluteUri != config.Instance.Url.AbsoluteUri) throw new Exception("保存情報が対象と合わない");
+
+    Console.WriteLine("クライアント準備 ...");
+    using var forgejo = new ForgejoClient(forgejoToken.Service, forgejoToken.Token);
+    var me = await forgejo.User.GetMeAsync(signal.Token);
+    if (me.login == null) throw new Exception();
+
+    Console.WriteLine("リポジトリ情報取得 ...");
+    var repo = await forgejo.Repository.GetAsync(target.Owner, target.Repo, signal.Token);
+
+    Console.WriteLine("リポジトリクローン ...");
+    var tempDir = new TempDir();
+    var cloneUrl = new UriBuilder(repo.clone_url ?? throw new Exception()) { UserName = forgejoToken.Token };
+    await "git".args("-C", tempDir.Info, "clone", cloneUrl.Uri, ".").result().success();
+
+    Console.WriteLine("テストブランチ 1 作成 ...");
+    var branch1 = $"test-branch-{DateTime.Now.Ticks:X16}";
+    await createBranchAsync(tempDir.Info, "main", branch1, commits: 3, signal.Token);
+
+    Console.WriteLine("PullRequest 1 作成 ...");
+    await forgejo.Repository.CreatePullRequestAsync(target.Owner, target.Repo,
+        new(
+            title: "Test PR 1",
+            body: """
+            テスト PR 1
+            """,
+            @base: "main",
+            head: branch1
+
+        ),
+        signal.Token
+    );
+
+    Console.WriteLine("Issue 1 作成 ...");
+    await forgejo.Issue.CreateAsync(target.Owner, target.Repo,
+        new(
+            title: "Test issue 1",
+            body: """
+            テスト Issue 1
+            """
+        ),
+        signal.Token
+    );
+
+    Console.WriteLine("テストブランチ 2 作成 ...");
+    var branch2 = $"test-branch-{DateTime.Now.Ticks:X16}";
+    await createBranchAsync(tempDir.Info, "main", branch2, commits: 4, signal.Token);
+
+    Console.WriteLine("PullRequest 2 作成 ...");
+    await forgejo.Repository.CreatePullRequestAsync(target.Owner, target.Repo,
+        new(
+            title: "Test PR 2",
+            body: """
+            テスト PR 2
+            """,
+            @base: "main",
+            head: branch2
+
+        ),
+        signal.Token
+    );
+
+    Console.WriteLine("Issue 2 作成 ...");
+    await forgejo.Issue.CreateAsync(target.Owner, target.Repo,
+        new(
+            title: "Test issue 2",
+            body: """
+            テスト Issue 2
+            """
+        ),
+        signal.Token
+    );
+
+});
+
+async Task createBranchAsync(DirectoryInfo workDir, string @base, string branch, int commits, CancellationToken token)
+{
+    await "git".args("-C", workDir, "switch", "--force", @base).result().success();
+    await "git".args("-C", workDir, "switch", "--create", branch).result().success();
+
+    var files = workDir.ScanFiles(skipDir: dir => dir.Name.StartsWith(".git")).ToArray();
+    var targets = Random.Shared.GetItems(files, commits);
+    foreach (var file in targets.Index())
+    {
+        var append = $"Append {1 + file.Index}";
+        await File.AppendAllTextAsync(file.Item.FullName, $"""
+        {branch}: {append}
+        """);
+
+        await "git".args("-C", workDir, "commit", "--all", "-m", append).result().success();
+    }
+
+    await "git".args("-C", workDir, "push", "--set-upstream", "origin", branch).result().success();
+}

@@ -1,0 +1,89 @@
+#!/usr/bin/env -S dotnet run --file
+#:package ForgejoApiClient@17.0.0-rev.2
+#:package Lestaly.General@0.148.0
+#:package Kokuban@0.2.0
+#:property PublishAot=false
+#:include .env-helper.cs
+using ForgejoApiClient;
+using ForgejoApiClient.Api;
+using Kokuban;
+using Lestaly;
+
+return await Paved.ProceedAsync(async () =>
+{
+    using var signal = new SignalCancellationPeriod();
+    var config = new ServiceConfig(ThisSource.Directory());
+
+    Console.WriteLine("管理用 APIトークンを読み込み ...");
+    var forgejoToken = await config.ApiKeys.ManageTokenFile.LoadTokenAsync(signal.Token) ?? throw new Exception("トークン情報を読み取れない");
+    if (forgejoToken.Service.AbsoluteUri != config.Instance.Url.AbsoluteUri) throw new Exception("保存情報が対象と合わない");
+
+    Console.WriteLine("クライアント準備 ...");
+    using var forgejo = new ForgejoClient(forgejoToken.Service, forgejoToken.Token);
+    var me = default(User);
+
+    using (var breaker = signal.Token.CreateLink(TimeSpan.FromSeconds(5)))
+    {
+        // 初期化直後はAPI呼び出しがエラーとなることがあるようなので、一定時間繰り返し呼び出しを試みる。
+        while (me?.login == null)
+        {
+            try { me = await forgejo.User.GetMeAsync(breaker.Token); }
+            catch { await Task.Delay(TimeSpan.FromMilliseconds(500), breaker.Token); }
+        }
+    }
+
+    Console.WriteLine("ユーザ確認 ...");
+    var existUsers = await forgejo.Admin.ListUsersAsync();
+    if (!existUsers.Any(u => u.login == config.Tester.TesterUser))
+    {
+        Console.WriteLine("テスタユーザの作成 ...");
+        try
+        {
+            var createOptions = new CreateUserOption(
+                username: config.Tester.TesterUser,
+                email: config.Tester.TesterMail,
+                password: config.Tester.TesterPass,
+                full_name: config.Tester.TesterName,
+                must_change_password: false
+            );
+            var user = await forgejo.Admin.CreateUserAsync(createOptions, signal.Token);
+            Console.WriteLine(Chalk.Green[".. 作成"]);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(Chalk.Red[ex.Message]);
+        }
+    }
+
+    Console.WriteLine("テスタユーザ APIトークンの生成 ...");
+    var testerToken = await forgejo.Admin.CreateUsersTokenAsync(
+        config.Tester.TesterUser,
+        new(
+            name: config.Tester.TesterTokenName,
+            scopes: config.Tester.TesterTokenScopes
+        ),
+        signal.Token
+    );
+    await config.ApiKeys.TesterTokenFile.SaveTokenAsync(config.Instance.Url, testerToken.sha1!);
+
+    Console.WriteLine("開発用設定ファイルの更新 ...");
+    await config.Develop.AppSettingsFile.WritePrettyJsonAsync(
+        new
+        {
+            Mcp = new
+            {
+                Forgejo = new
+                {
+                    InstanceName = "Test Forgejo",
+                    Url = config.Instance.Url,
+                    ApiToken = testerToken.sha1!
+                },
+                Repository = new
+                {
+                    IncludePrivate = true,
+                },
+            }
+        },
+        signal.Token
+    );
+});

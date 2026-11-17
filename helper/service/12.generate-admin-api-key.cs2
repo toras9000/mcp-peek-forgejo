@@ -1,0 +1,25 @@
+#!/usr/bin/env -S dotnet run --file
+#:package Lestaly.General@0.148.0
+#:include .env-helper.cs
+using Lestaly;
+using Lestaly.Cx;
+
+return await Paved.ProceedAsync(async () =>
+{
+    var config = new ServiceConfig(ThisSource.Directory());
+
+    Console.WriteLine("テスト用 APIトークンの生成 ...");
+    var apiToken = await "docker".args("compose", "--file", config.Docker.ComposeFile,
+        "exec", "-u", "1000", config.Docker.ForgejoService,
+        "forgejo", "admin", "user", "generate-access-token",
+            "--username", config.Setup.AdminUser,
+            "--token-name", config.Setup.AdminTokenName,
+            "--scopes", "all",
+            "--raw"
+    ).silent().result().success().output(trim: true);
+
+    Console.WriteLine("トークンをファイルに保存 ...");
+    await config.ApiKeys.ManageTokenFile.SaveTokenAsync(config.Instance.Url, apiToken);
+
+    Console.WriteLine("完了");
+});

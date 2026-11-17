@@ -1,0 +1,16 @@
+#!/usr/bin/env -S dotnet run --file
+#:package Lestaly.General@0.148.0
+#:include .env-helper.cs
+using Lestaly;
+using Lestaly.Cx;
+
+return await Paved.ProceedAsync(async () =>
+{
+    var config = new ServiceConfig(ThisSource.Directory());
+
+    Console.WriteLine("テスト環境の削除 ...");
+    await "docker".args("compose", "--file", config.Docker.ComposeFile, "down", "--remove-orphans", "--volumes").result().success();
+
+    Console.WriteLine("テストファイルの削除 ...");
+    config.Docker.MountDirectory.DeleteRecurse();
+});

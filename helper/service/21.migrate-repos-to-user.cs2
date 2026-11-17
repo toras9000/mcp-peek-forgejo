@@ -1,0 +1,56 @@
+#!/usr/bin/env -S dotnet run --file
+#:package ForgejoApiClient@17.0.0-rev.2
+#:package Lestaly.General@0.148.0
+#:package Kokuban@0.2.0
+#:property PublishAot=false
+#:include .env-helper.cs
+using System.Text.RegularExpressions;
+using ForgejoApiClient;
+using Kokuban;
+using Lestaly;
+
+return await Paved.ProceedAsync(async () =>
+{
+    var sourceRepos = new[]
+    {
+        "https://github.com/toras9000/ForgejoApiClient.git",
+        "https://github.com/toras9000/BookStackApiClient.git",
+        "https://github.com/toras9000/NebriaChip.Vault.Win.git",
+        "https://github.com/toras9000/NebriaChip.Ip.Win.git",
+        "https://github.com/toras9000/ToraNith.WebNook.git",
+        "https://github.com/toras9000/Lestaly.git",
+        "https://github.com/toras9000/cs-fileapps-samples.git",
+        "https://github.com/toras9000/forgejo-api-scripts.git",
+        "https://github.com/toras9000/bookstack-api-scripts.git",
+    };
+
+    using var signal = new SignalCancellationPeriod();
+    var config = new ServiceConfig(ThisSource.Directory());
+
+    Console.WriteLine("テスタのAPIトークンを読み込み ...");
+    var forgejoToken = await config.ApiKeys.TesterTokenFile.LoadTokenAsync(signal.Token) ?? throw new Exception("トークン情報を読み取れない");
+    if (forgejoToken.Service.AbsoluteUri != config.Instance.Url.AbsoluteUri) throw new Exception("保存情報が対象と合わない");
+
+    Console.WriteLine("クライアント準備 ...");
+    using var forgejo = new ForgejoClient(forgejoToken.Service, forgejoToken.Token);
+    var me = await forgejo.User.GetMeAsync(signal.Token);
+    if (me.login == null) throw new Exception();
+
+    Console.WriteLine("リポジトリマイグレーション");
+    foreach (var url in sourceRepos)
+    {
+        Console.WriteLine($"from {url}");
+        try
+        {
+            var owner = me.login;
+            var name = url.TrimEndPattern(@"\.git", RegexOptions.IgnoreCase).TakeLastToken('/').ToString();
+            Console.WriteLine($".. to {owner}/{name}");
+            await forgejo.Repository.MigrateAsync(new(clone_addr: url, repo_owner: owner, repo_name: name));
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(Chalk.Red[$".. Error: {ex.Message}"]);
+        }
+    }
+
+});

@@ -1,0 +1,86 @@
+#!/usr/bin/env -S dotnet run --file
+#:package ForgejoApiClient@17.0.0-rev.2
+#:package Lestaly.General@0.148.0
+#:package Kokuban@0.2.0
+#:property PublishAot=false
+#:include .env-helper.cs
+using ForgejoApiClient;
+using ForgejoApiClient.Api;
+using Kokuban;
+using Lestaly;
+
+return await Paved.ProceedAsync(async () =>
+{
+    using var signal = new SignalCancellationPeriod();
+    var config = new ServiceConfig(ThisSource.Directory());
+
+    Console.WriteLine("管理用 APIトークンを読み込み ...");
+    var forgejoToken = await config.ApiKeys.ManageTokenFile.LoadTokenAsync(signal.Token) ?? throw new Exception("トークン情報を読み取れない");
+    if (forgejoToken.Service.AbsoluteUri != config.Instance.Url.AbsoluteUri) throw new Exception("保存情報が対象と合わない");
+
+    Console.WriteLine("クライアント準備 ...");
+    using var forgejo = new ForgejoClient(forgejoToken.Service, forgejoToken.Token);
+    var me = await forgejo.User.GetMeAsync(signal.Token);
+    if (me.login == null) throw new Exception();
+
+    Console.WriteLine("組織確認 ...");
+    var org = (await forgejo.Organization.ListAsync()).FirstOrDefault(o => o.username == config.TestOrg.OrgName);
+    if (org == null)
+    {
+        Console.WriteLine("テスト組織の作成 ...");
+        try
+        {
+            var createOptions = new CreateOrgOption(
+                username: config.TestOrg.OrgName
+            );
+            org = await forgejo.Organization.CreateAsync(createOptions, signal.Token);
+            Console.WriteLine(Chalk.Green[".. 作成"]);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(Chalk.Red[ex.Message]);
+            return;
+        }
+    }
+
+    Console.WriteLine("チーム確認 ...");
+    var team = (await forgejo.Organization.ListTeamsAsync(config.TestOrg.OrgName)).FirstOrDefault(o => o.name == config.TestOrg.TeamName);
+    if (team == null)
+    {
+        Console.WriteLine("テストチームの作成 ...");
+        try
+        {
+            var createOptions = new CreateTeamOption(
+                name: $"{config.TestOrg.OrgName}-{DateTime.Now.Ticks}",
+                permission: CreateTeamOptionPermission.Admin,
+                can_create_org_repo: true,
+                includes_all_repositories: true
+            );
+            team = await forgejo.Organization.CreateTeamAsync(config.TestOrg.OrgName, createOptions, signal.Token);
+            Console.WriteLine(Chalk.Green[".. 作成"]);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(Chalk.Red[ex.Message]);
+            return;
+        }
+    }
+
+
+    Console.WriteLine("チームメンバー確認 ...");
+    var existMembers = await forgejo.Organization.ListTeamMembersAsync(team.id!.Value);
+    if (!existMembers.Any(o => o.login == config.Tester.TesterName))
+    {
+        Console.WriteLine("チームメンバーの追加 ...");
+        try
+        {
+            await forgejo.Organization.AddTeamMemberAsync(team.id!.Value, config.Tester.TesterUser, signal.Token);
+            Console.WriteLine(Chalk.Green[".. 作成"]);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(Chalk.Red[ex.Message]);
+        }
+    }
+
+});

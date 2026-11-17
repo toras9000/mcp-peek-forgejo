@@ -1,0 +1,44 @@
+name: mcp-tools-services
+
+volumes:
+  forgejo-app-data:
+
+services:
+  app:
+    image: codeberg.org/forgejo/forgejo:17
+    restart: unless-stopped
+    networks:
+      default:
+        aliases:
+          - forgejo-app-container
+    ports:
+      - "3880:3000"
+      - "3822:22"
+    healthcheck:
+      test: curl -f -s http://localhost:3000 || exit 1
+      start_period: 60s
+      start_interval: 3s
+      timeout: 5s
+      interval: 300s
+      retries: 3
+    volumes:
+      - type: volume
+        source: forgejo-app-data
+        target: /data
+    environment:
+      - TZ=JST-9
+      - USER_UID=1000
+      - USER_GID=1000
+      - FORGEJO__database__DB_TYPE=sqlite3
+      - FORGEJO__cron_0x2E_update_checker__ENABLED=false
+      - FORGEJO__server__ROOT_URL=http://localhost:3880
+      - FORGEJO__server__SSH_PORT=3880
+      - FORGEJO__admin__USER_DISABLED_FEATURES=deletion
+      - FORGEJO__admin__EXTERNAL_USER_DISABLE_FEATURES=deletion
+      - FORGEJO__service__DISABLE_REGISTRATION=true
+      - FORGEJO__service__REQUIRE_SIGNIN_VIEW=true
+      - FORGEJO__service_0x2E_explore__REQUIRE_SIGNIN_VIEW=true
+      - FORGEJO__migrations__ALLOW_LOCALNETWORKS=true
+      - FORGEJO__quota__ENABLED=true
+      - FORGEJO__quota__DEFAULT_GROUPS=default-quota
+      - FORGEJO__webhook__ALLOWED_HOST_LIST=*
