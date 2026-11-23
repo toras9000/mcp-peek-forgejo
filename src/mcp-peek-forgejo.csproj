@@ -5,12 +5,15 @@
     <RollForward>Major</RollForward>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>mcp_peek_forgejo</RootNamespace>
     <UserSecretsId>aa289b98-86e9-44ff-9f4f-a2668e206874</UserSecretsId>
 
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="ModelContextProtocol.AspNetCore" Version="2.3.0" />
+    <PackageReference Include="ForgejoApiClient" Version="17.0.0-rev.2" />
+    <PackageReference Include="ModelContextProtocol.AspNetCore" Version="2.4.0" />
+    <PackageReference Include="ToraNith.WebNook" Version="0.3.0" />
   </ItemGroup>
 
 </Project>

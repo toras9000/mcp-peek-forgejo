@@ -1,10 +1,11 @@
 # For more info on HTTP files go to https://aka.ms/vs/httpfile
 
-@HostAddress = https://localhost:5026
+@HostAddress = http://localhost:5000
 
 POST {{HostAddress}}/
 Accept: application/json, text/event-stream
 Content-Type: application/json
+Authorization: Bearer secret-keyword-level-2
 MCP-Protocol-Version: 2025-11-25
 
 {
@@ -12,6 +13,317 @@ MCP-Protocol-Version: 2025-11-25
     "id": 1,
     "method": "tools/call",
     "params": {
-        "name": "get_random_number"
+        "name": "get_server_version"
     }
 }
+
+###
+
+POST {{HostAddress}}/
+Accept: application/json, text/event-stream
+Content-Type: application/json
+Authorization: Bearer secret-keyword-level-2
+MCP-Protocol-Version: 2025-11-25
+
+{
+    "jsonrpc": "2.0",
+    "id": 2,
+    "method": "tools/call",
+    "params": {
+        "name": "search_users",
+        "arguments": {
+          "query": null,
+          "sort": "NameReverse",
+          "onlyActive": true,
+          "limit": null,
+          "page": null
+        }
+    }
+}
+
+###
+
+POST {{HostAddress}}/
+Accept: application/json, text/event-stream
+Content-Type: application/json
+Authorization: Bearer secret-keyword-level-2
+MCP-Protocol-Version: 2025-11-25
+
+{
+    "jsonrpc": "2.0",
+    "id": 2,
+    "method": "tools/call",
+    "params": {
+        "name": "search_repositories",
+        "arguments": {
+          "query": "Lestaly",
+          "userId": null,
+          "sort": null,
+          "order": null,
+          "limit": null,
+          "page": null
+        }
+    }
+}
+
+###
+
+POST {{HostAddress}}/
+Accept: application/json, text/event-stream
+Content-Type: application/json
+Authorization: Bearer secret-keyword-level-2
+MCP-Protocol-Version: 2025-11-25
+
+{
+    "jsonrpc": "2.0",
+    "id": 2,
+    "method": "tools/call",
+    "params": {
+        "name": "get_repository_branches",
+        "arguments": {
+          "repoOwner": "test-user",
+          "repoName": "Lestaly",
+          "limit": null,
+          "page": null
+        }
+    }
+}
+
+###
+
+POST {{HostAddress}}/
+Accept: application/json, text/event-stream
+Content-Type: application/json
+Authorization: Bearer secret-keyword-level-2
+MCP-Protocol-Version: 2025-11-25
+
+{
+    "jsonrpc": "2.0",
+    "id": 2,
+    "method": "tools/call",
+    "params": {
+        "name": "get_repository_file_list",
+        "arguments": {
+          "repoOwner": "test-user",
+          "repoName": "Lestaly",
+          "branch": null,
+          "limit": null,
+          "page": null
+        }
+    }
+}
+
+###
+
+POST {{HostAddress}}/
+Accept: application/json, text/event-stream
+Content-Type: application/json
+Authorization: Bearer secret-keyword-level-2
+MCP-Protocol-Version: 2025-11-25
+
+{
+    "jsonrpc": "2.0",
+    "id": 2,
+    "method": "tools/call",
+    "params": {
+        "name": "get_repository_file_content",
+        "arguments": {
+          "repoOwner": "test-user",
+          "repoName": "Lestaly",
+          "filePath": "src/Lestaly.General/NumberUtils.cs",
+          "branch": null
+        }
+    }
+}
+
+###
+
+POST {{HostAddress}}/
+Accept: application/json, text/event-stream
+Content-Type: application/json
+Authorization: Bearer secret-keyword-level-2
+MCP-Protocol-Version: 2025-11-25
+
+{
+    "jsonrpc": "2.0",
+    "id": 2,
+    "method": "tools/call",
+    "params": {
+        "name": "get_repository_commits",
+        "arguments": {
+          "repoOwner": "test-user",
+          "repoName": "Lestaly",
+          "branch": null,
+          "with_files": false,
+          "limit": null,
+          "page": null
+        }
+    }
+}
+
+###
+
+POST {{HostAddress}}/
+Accept: application/json, text/event-stream
+Content-Type: application/json
+Authorization: Bearer secret-keyword-level-2
+MCP-Protocol-Version: 2025-11-25
+
+{
+    "jsonrpc": "2.0",
+    "id": 2,
+    "method": "tools/call",
+    "params": {
+        "name": "get_repository_commit_diff",
+        "arguments": {
+          "repoOwner": "test-user",
+          "repoName": "Lestaly",
+          "hash": "main",
+          "type": "diff"
+        }
+    }
+}
+
+###
+
+POST {{HostAddress}}/
+Accept: application/json, text/event-stream
+Content-Type: application/json
+Authorization: Bearer secret-keyword-level-2
+MCP-Protocol-Version: 2025-11-25
+
+{
+    "jsonrpc": "2.0",
+    "id": 2,
+    "method": "tools/call",
+    "params": {
+        "name": "get_repository_issues",
+        "arguments": {
+          "repoOwner": "test-user",
+          "repoName": "Lestaly",
+          "type": null,
+          "state": null,
+          "query": null,
+          "labels": null,
+          "since": null,
+          "before": null,
+          "author": null,
+          "assignee": null,
+          "sort": null,
+          "withoutBody": true,
+          "limit": null,
+          "page": null
+        }
+    }
+}
+
+###
+
+POST {{HostAddress}}/
+Accept: application/json, text/event-stream
+Content-Type: application/json
+Authorization: Bearer secret-keyword-level-2
+MCP-Protocol-Version: 2025-11-25
+
+{
+    "jsonrpc": "2.0",
+    "id": 2,
+    "method": "tools/call",
+    "params": {
+        "name": "get_repository_pull_request",
+        "arguments": {
+          "repoOwner": "test-user",
+          "repoName": "Lestaly",
+          "number": 1
+        }
+    }
+}
+
+###
+
+POST {{HostAddress}}/
+Accept: application/json, text/event-stream
+Content-Type: application/json
+Authorization: Bearer secret-keyword-level-2
+MCP-Protocol-Version: 2025-11-25
+
+{
+    "jsonrpc": "2.0",
+    "id": 2,
+    "method": "tools/call",
+    "params": {
+        "name": "get_repository_pull_request_diff",
+        "arguments": {
+          "repoOwner": "test-user",
+          "repoName": "Lestaly",
+          "number": 1,
+          "type": "diff"
+        }
+    }
+}
+
+###
+
+POST {{HostAddress}}/
+Accept: application/json, text/event-stream
+Content-Type: application/json
+Authorization: Bearer secret-keyword-level-2
+MCP-Protocol-Version: 2025-11-25
+
+{
+    "jsonrpc": "2.0",
+    "id": 2,
+    "method": "tools/call",
+    "params": {
+        "name": "get_organizations",
+        "arguments": {
+          "limit": null,
+          "page": null
+        }
+    }
+}
+
+###
+
+POST {{HostAddress}}/
+Accept: application/json, text/event-stream
+Content-Type: application/json
+Authorization: Bearer secret-keyword-level-2
+MCP-Protocol-Version: 2025-11-25
+
+{
+    "jsonrpc": "2.0",
+    "id": 2,
+    "method": "tools/call",
+    "params": {
+        "name": "get_organization_repositories",
+        "arguments": {
+          "orgName": "test-org",
+          "limit": null,
+          "page": null
+        }
+    }
+}
+
+###
+
+POST {{HostAddress}}/
+Accept: application/json, text/event-stream
+Content-Type: application/json
+Authorization: Bearer secret-keyword-level-2
+MCP-Protocol-Version: 2025-11-25
+
+{
+    "jsonrpc": "2.0",
+    "id": 2,
+    "method": "tools/call",
+    "params": {
+        "name": "get_organization_members",
+        "arguments": {
+          "orgName": "test-org",
+          "limit": null,
+          "page": null
+        }
+    }
+}
+
