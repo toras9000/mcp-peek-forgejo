@@ -1,0 +1,17 @@
+name: mcp-peek-forgejo-playground
+
+services:
+  app:
+    image: ghcr.io/toras9000/mcp-peek-forgejo:latest
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    volumes:
+      - type: bind
+        source: ./assets/appsettings.json
+        target: /app/appsettings.json
+        read_only: true
+        bind:
+          create_host_path: false
+    environment:
+      - TZ=JST-9
